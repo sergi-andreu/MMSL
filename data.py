@@ -60,7 +60,6 @@ class Data:
         self.std_binary_col = self.binary_col.std()
         
         self.binary_col = (self.binary_col - self.mean_binary_col) / self.std_binary_col
+        pass
         
-        
-        return col
     pass
