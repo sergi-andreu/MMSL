@@ -7,6 +7,8 @@ class Data:
         self.path = path
         self.df = pd.read_csv(path)
         self.column_names = list(self.df.columns)
+
+        self.labels = self.df["Label"]
         
         self.num_bound_col = ["danceability", "energy", "speechiness","acousticness",
                               "instrumentalness", "liveness", "valence"]
@@ -46,7 +48,7 @@ class Data:
         self.mean_num_unbound_col = self.num_unbound_col.mean()
         self.std_num_unbound_col = self.num_unbound_col.std()
         
-        self.num_unbound_col = (self.num_unbound_col - self.mean_unnum_bound_col) / self.std_num_bound_col
+        self.num_unbound_col = (self.num_unbound_col - self.mean_num_unbound_col) / self.std_num_unbound_col
         pass
         
     def preprocess_class_col(self):
@@ -63,3 +65,8 @@ class Data:
         pass
         
     pass
+
+
+    def append_cols(self):
+        
+        self.df = pd.concat([self.num_bound_col, self.num_unbound_col, self.class_col, self.binary_col])
