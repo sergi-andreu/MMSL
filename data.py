@@ -69,4 +69,4 @@ class Data:
 
     def append_cols(self):
         
-        self.df = pd.concat([self.num_bound_col, self.num_unbound_col, self.class_col, self.binary_col])
+        self.df = pd.concat([self.num_bound_col, self.num_unbound_col, self.class_col, self.binary_col], axis=1)
