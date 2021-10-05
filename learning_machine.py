@@ -1,3 +1,6 @@
+import numpy as np
+
+
 class LearningMachine:
     
     def __init__(self, data_class):
@@ -73,7 +76,7 @@ class LDA(LearningMachine):
         X is a dataframe containing the features of the samples for which we want to predict their labels
         """
         
-        self.model.predict(X)
+        return self.model.predict(X)
         
         pass
     
