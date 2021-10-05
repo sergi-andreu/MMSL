@@ -23,6 +23,8 @@ if __name__ == "__main__":
     report = classification_report(data.labels, model.predict(data.df))
     print(mat)
     print(report)
+
+    print("hola Sergi, que tal?")
     ### COLORING UNPROCESSED DATA
     # color_wheel = {0: "darkred", 1: "darkblue"}
     # colors = data.labels.map(lambda x: color_wheel.get(x))
