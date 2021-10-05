@@ -109,4 +109,18 @@ class Data:
 
         self.preprocessed = True
         pass
+    
+    
+    def train_val_split(self, train=0.8):
+        
+        assert self.preprocessed = True
+        
+        n_rows = self.df.count
+        
+        n_training_rows = int(train*n_rows)
+        
+        self.training_df = self.df[:n_training_rows, :]
+        self.validation_df = self.df[n_training_rows:, :]
+        
+        pass
 
