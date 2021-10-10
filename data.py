@@ -1,4 +1,6 @@
 import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
 
 class Data:
     
@@ -11,13 +13,13 @@ class Data:
         self.labels = self.df["Label"]
         
 
-        self.num_bound_col = ["danceability", "energy", "speechiness","acousticness",
+        self.num_bound_col_names = ["danceability", "energy", "speechiness","acousticness",
                               "instrumentalness", "liveness", "valence"]
         
-        self.num_unbound_col = ["loudness", "tempo"]
+        self.num_unbound_col_names = ["loudness", "tempo"]
         
-        self.class_col = ["key"]
-        self.binary_col = ["mode"]
+        self.class_col_names = ["key"]
+        self.binary_col_names = ["mode"]
 
         self.preprocessed = False
 
@@ -37,13 +39,13 @@ class Data:
 
         assert self.preprocessed == False
         
-        assert(len( self.num_bound_col) + len(self.num_unbound_col) + 
-               len(self.class_col) + len(self.binary_col) + 1 == len(self.column_names))
+        assert(len( self.num_bound_col_names) + len(self.num_unbound_col_names) + 
+               len(self.class_col_names) + len(self.binary_col_names) + 1 == len(self.column_names))
                
-        self.num_bound_col = self.df[self.num_bound_col]
-        self.num_unbound_col = self.df[self.num_unbound_col]
-        self.class_col = self.df[self.class_col]
-        self.binary_col = self.df[self.binary_col]
+        self.num_bound_col = self.df[self.num_bound_col_names]
+        self.num_unbound_col = self.df[self.num_unbound_col_names]
+        self.class_col = self.df[self.class_col_names]
+        self.binary_col = self.df[self.binary_col_names]
         pass
 
         
@@ -108,5 +110,42 @@ class Data:
         self._append_cols()
 
         self.preprocessed = True
+
         pass
+
+
+    def remove_duplicates(self):
+        duplicated = self.df.duplicated()
+        n_duplicated = np.sum(duplicated)
+
+        idx = np.where(duplicated==True)[0]
+
+        self.df = self.df.drop(idx).reset_index(drop=True)
+        self.labels = self.labels.drop(idx).reset_index(drop=True)
+
+        print(f"There were {n_duplicated} duplicated elements in the dataset, and have been removed from the dataframe")
+        
+
+    
+    def visualize(self, cmap=None, labels=None):
+
+        from matplotlib import colors
+
+        try:
+            if labels==None:
+                labels = self.labels
+        except: pass
+
+        try:
+            if cmap==None:
+                cmap = colors.ListedColormap(['r', 'b'], 2)
+        except: pass
+
+        plotting_features = self.num_bound_col_names + self.num_unbound_col_names
+        plotting_df = self.df[self.num_bound_col_names]
+        pd.plotting.scatter_matrix(plotting_df, alpha=0.4, figsize=(17,14), c=labels, cmap=cmap)
+        plt.show()
+
+        pass
+
 
