@@ -4,6 +4,7 @@ from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import KFold
 
 import warnings
+from sklearn.exceptions import ConvergenceWarning
 
 class LearningMachine:
     
@@ -233,7 +234,62 @@ class LearningMachine:
         self.run_cross_validation += 1
 
 
-    def fit_with_all_data(self, visualize = True, print_metrics = True):
+    def parameter_search(self, parameter_list, parameter_label = None, plot_variable = "accuracy", layers_or_width="layers"):
+
+        for parameter in parameter_list:
+            self._change_parameters(parameter)
+            self.cross_validation()
+
+
+        import matplotlib.pyplot as plt
+
+        if self.name == "LDA" or self.name == "QDA":
+            parameter_label = "solver"
+
+        if self.name == "KNearestNeighbors":
+            parameter_label = "n_neighbors"
+
+        if plot_variable == "accuracy":
+            train_variable = "Train Accuracy"
+            val_variable = "Test Accuracy"
+
+        train_ = []
+        train_err_ = []
+
+        test_ = []
+        test_err_ = []
+
+        for i in range(self.run_cross_validation):
+
+            train_.append(self.metrics[i][train_variable][0])
+            train_err_.append(self.metrics[i][train_variable][1])
+
+            test_.append(self.metrics[i][val_variable][0])
+            test_err_.append(self.metrics[i][val_variable][1])
+
+        if self.name == "NN":
+            if layers_or_width == "layers":
+                parameter_list = [parameter_list[i][0] for i in range(len(parameter_list))]
+
+
+        plt.plot(parameter_list, train_ , c="r", label="Training")
+        plt.fill_between(parameter_list, np.array(train_) - np.array(train_err_),
+                        np.array(train_) + np.array(train_err_), color="r", alpha=0.5)
+
+        plt.plot(parameter_list, test_, c="b", label="Validation")
+        plt.fill_between(parameter_list, np.array(test_) - np.array(test_err_),
+                        np.array(test_) + np.array(test_err_), color="b", alpha=0.5)
+
+        plt.show()
+
+
+
+        
+
+
+
+
+    def fit_with_all_data(self, visualize = True, diagonal="hist", print_metrics = True):
 
         self._fit()
 
@@ -265,7 +321,7 @@ class LearningMachine:
 
             cmap = colors.ListedColormap(['g', 'k', 'b', 'r'], 4)
             
-            self.input.visualize(cmap=cmap, labels=C)
+            self.input.visualize(cmap=cmap, labels=C, diagonal=diagonal)
 
 
         pass
@@ -325,6 +381,12 @@ class LDA(LearningMachine):
         return self.model.get_params()
 
 
+    def _change_parameters(self, solver):
+
+        self.model.solver = solver
+
+
+
 class QDA(LearningMachine):
     
     def __init__(self, data):
@@ -375,6 +437,10 @@ class QDA(LearningMachine):
     def _get_fitting_parameters(self):
 
         return self.model.get_params()
+
+    def _change_parameters(self, solver):
+
+        self.model.solver = solver
 
 
 class KNearest(LearningMachine):
@@ -433,3 +499,117 @@ class KNearest(LearningMachine):
     def _get_fitting_parameters(self):
 
         return self.model.get_params()
+
+
+class LogisticRegression(LearningMachine):
+
+    
+    def __init__(self, data):
+        super().__init__(data)
+        self.name = "LDA"
+        
+        from sklearn.linear_model import LogisticRegression
+        
+        self.model = LogisticRegression()
+
+        pass
+
+    def _fit(self, input = None, labels = None, print_message=True):
+
+        try: 
+            if input == None: input = self.input.df
+        except: pass
+
+        try: 
+            if labels == None: labels = self.input.labels
+        except: pass
+
+        self.model.fit(input, labels)
+        
+        if print_message:
+            print(f"The {self.name} model has been trained on the given data")
+        pass
+    
+    def _predict(self, X=None):
+        
+        """
+        X is a dataframe containing the features of the samples for which we want to predict their labels
+        """
+        
+        try:
+            if X == None:
+                X = self.input.df
+        except:
+            pass
+
+
+        return self.model.predict(X)
+        
+        pass
+
+    def _get_fitting_parameters(self):
+
+        return self.model.get_params()
+
+
+    def _change_parameters(self, solver):
+
+        self.model.solver = solver
+
+
+class NeuralNetwork(LearningMachine):
+    
+    def __init__(self, data):
+        super().__init__(data)
+        self.name = "NN"
+        
+        from sklearn.neural_network import MLPClassifier
+        
+        self.model = MLPClassifier(solver="sgd", hidden_layer_sizes=(1,1), alpha=1e-5)
+        self.model.max_iter = 500
+
+        pass
+
+    def _fit(self, input = None, labels = None, print_message=True):
+
+        warnings.filterwarnings("ignore", category=ConvergenceWarning)
+
+        try: 
+            if input == None: input = self.input.df
+        except: pass
+
+        try: 
+            if labels == None: labels = self.input.labels
+        except: pass
+
+        self.model.fit(input, labels)
+        
+        if print_message:
+            print(f"The {self.name} model has been trained on the given data")
+        pass
+    
+    def _predict(self, X=None):
+        
+        """
+        X is a dataframe containing the features of the samples for which we want to predict their labels
+        """
+        
+        try:
+            if X == None:
+                X = self.input.df
+        except:
+            pass
+
+
+        return self.model.predict(X)
+        
+        pass
+
+    def _get_fitting_parameters(self):
+
+        return self.model.get_params()
+
+
+    def _change_parameters(self, hidden_layers):
+
+        self.model.hidden_layer_sizes = hidden_layers

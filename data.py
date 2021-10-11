@@ -63,7 +63,7 @@ class Data:
 
         self.mean_num_unbound_col = self.num_unbound_col.mean()
         self.std_num_unbound_col = self.num_unbound_col.std()
-        
+
         self.num_unbound_col = (self.num_unbound_col - self.mean_num_unbound_col) / self.std_num_unbound_col
 
         self.unbound_preprocessed = True
@@ -127,7 +127,9 @@ class Data:
         
 
     
-    def visualize(self, cmap=None, labels=None):
+    def visualize(self, cmap=None, labels=None, diagonal="hist"):
+
+        print(diagonal)
 
         from matplotlib import colors
 
@@ -143,7 +145,7 @@ class Data:
 
         plotting_features = self.num_bound_col_names + self.num_unbound_col_names
         plotting_df = self.df[self.num_bound_col_names]
-        pd.plotting.scatter_matrix(plotting_df, alpha=0.4, figsize=(17,14), c=labels, cmap=cmap)
+        pd.plotting.scatter_matrix(plotting_df, alpha=0.4, figsize=(17,14), c=labels, cmap=cmap, diagonal=diagonal)
         plt.show()
 
         pass
