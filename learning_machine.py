@@ -128,6 +128,7 @@ class LearningMachine:
 
     def cross_validation(self, k=6, shuffle=False, compute_accuracy=True, compute_recall=True, compute_precision=True, compute_F1=True):
 
+
         kfold_train_metrics = []
         kfold_test_metrics = []
 
@@ -143,7 +144,9 @@ class LearningMachine:
 
         cv = KFold(n_splits=k)
 
-        try: self._fit()
+        try: 
+            if self.name == "LDA" or self.name == "QDA": 
+                self._fit()
         except: pass
 
         for train_index, test_index in cv.split(total_input):
@@ -389,9 +392,9 @@ class KNearest(LearningMachine):
         pass
 
     def _change_parameters(self, n_neighbors):
-
+        from sklearn.neighbors import KNeighborsClassifier
         self.n_neighbors = n_neighbors
-        self.model = KNeighborsClassifier(n_neighbors = self.n_neighbors)
+        self.model = KNeighborsClassifier(n_neighbors = n_neighbors)
 
 
     def _fit(self, input = None, labels = None, print_message=True):
