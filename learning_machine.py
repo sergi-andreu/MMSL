@@ -71,22 +71,25 @@ class LearningMachine:
     def _compute_metrics(self, X=None, Y=None, compute_accuracy=True, compute_recall=True, compute_precision=True, compute_F1=True):
 
         metrics = {}
-        cm = self._get_confusion_matrix(X=X, Y=Y)
+        cm = np.array(self._get_confusion_matrix(X=X, Y=Y), dtype=np.int64)
 
         if compute_accuracy:
             acc = (cm[0][0] + cm[1][1])/np.sum(cm)
             metrics["accuracy"] = acc
 
         if compute_recall:
-            rec = (cm[0][0]) / (cm[0][0] + cm[0][1])
+            if cm[0][0] + cm[0][1] != 0.0 : rec = (cm[0][0]) / (cm[0][0] + cm[0][1])
+            else: rec = np.nan
             metrics["recall"] = rec
 
         if compute_precision:
-            pre = (cm[0][0]) / (cm[0][0] + cm[1][0])
+            if cm[0][0] + cm[1][0] != 0.0 : pre = (cm[0][0]) / (cm[0][0] + cm[1][0])
+            else: pre = np.nan
             metrics["precision"] = pre
 
         if compute_F1:
-            fscore = (2*pre*rec)/(pre+rec)
+            if pre + rec != 0 : fscore = (2*pre*rec)/(pre+rec)
+            else: fscore = np.nan
             metrics["F1"] = fscore
 
         return metrics
@@ -174,8 +177,8 @@ class LearningMachine:
             train_acc_list = [kfold_train_metrics[m]["accuracy"] for m in range(L)]
             test_acc_list = [kfold_test_metrics[m]["accuracy"] for m in range(L)]
 
-            train_acc = [np.mean(train_acc_list), np.std(train_acc_list)]
-            test_acc = [np.mean(test_acc_list), np.std(test_acc_list)]
+            train_acc = [np.nanmean(train_acc_list), np.nanstd(train_acc_list)]
+            test_acc = [np.nanmean(test_acc_list), np.nanstd(test_acc_list)]
 
             kfold_metrics["Train Accuracy"] = train_acc
             kfold_metrics["Test Accuracy"] = test_acc
@@ -187,8 +190,8 @@ class LearningMachine:
             train_rec_list = [kfold_train_metrics[m]["recall"] for m in range(L)]
             test_rec_list = [kfold_test_metrics[m]["recall"] for m in range(L)]
 
-            train_rec = [np.mean(train_rec_list), np.std(train_rec_list)]
-            test_rec = [np.mean(test_rec_list), np.std(test_rec_list)]
+            train_rec = [np.nanmean(train_rec_list), np.nanstd(train_rec_list)]
+            test_rec = [np.nanmean(test_rec_list), np.nanstd(test_rec_list)]
 
             kfold_metrics["Train Recall"] = train_rec
             kfold_metrics["Test Recall"] = test_rec
@@ -200,8 +203,8 @@ class LearningMachine:
             train_prec_list = [kfold_train_metrics[m]["precision"] for m in range(L)]
             test_prec_list = [kfold_test_metrics[m]["precision"] for m in range(L)]
 
-            train_prec = [np.mean(train_prec_list), np.std(train_prec_list)]
-            test_prec = [np.mean(test_prec_list), np.std(test_prec_list)]
+            train_prec = [np.nanmean(train_prec_list), np.nanstd(train_prec_list)]
+            test_prec = [np.nanmean(test_prec_list), np.nanstd(test_prec_list)]
 
             kfold_metrics["Train Precision"] = train_prec
             kfold_metrics["Test Precision"] = test_prec
@@ -213,8 +216,8 @@ class LearningMachine:
             train_F1_list = [kfold_train_metrics[m]["F1"] for m in range(L)]
             test_F1_list = [kfold_test_metrics[m]["F1"] for m in range(L)]
 
-            train_F1 = [np.mean(train_F1_list), np.std(train_F1_list)]
-            test_F1 = [np.mean(test_F1_list), np.std(test_F1_list)]
+            train_F1 = [np.nanmean(train_F1_list), np.nanstd(train_F1_list)]
+            test_F1 = [np.nanmean(test_F1_list), np.nanstd(test_F1_list)]
 
             kfold_metrics["Train F1 score"] = train_F1
             kfold_metrics["Test F1 score"] = test_F1
@@ -323,7 +326,7 @@ class QDA(LearningMachine):
     
     def __init__(self, data):
         super().__init__(data)
-        self.name = "LDA"
+        self.name = "QDA"
         
         from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
         
@@ -334,6 +337,64 @@ class QDA(LearningMachine):
     def _fit(self, input = None, labels = None, print_message=True):
 
         warnings.filterwarnings("ignore", message="Variables are collinear")
+
+        try: 
+            if input == None: input = self.input.df
+        except: pass
+
+        try: 
+            if labels == None: labels = self.input.labels
+        except: pass
+
+        self.model.fit(input, labels)
+        
+        if print_message:
+            print(f"The {self.name} model has been trained on the given data")
+        pass
+    
+    def _predict(self, X=None):
+        
+        """
+        X is a dataframe containing the features of the samples for which we want to predict their labels
+        """
+        
+        try:
+            if X == None:
+                X = self.input.df
+        except:
+            pass
+
+
+        return self.model.predict(X)
+        
+        pass
+
+    def _get_fitting_parameters(self):
+
+        return self.model.get_params()
+
+
+class KNearest(LearningMachine):
+    
+    def __init__(self, data, n_neighbors = 5):
+        super().__init__(data)
+        self.name = "KNearestNeighbors"
+
+        self.n_neighbors = n_neighbors
+        
+        from sklearn.neighbors import KNeighborsClassifier
+        
+        self.model = KNeighborsClassifier(n_neighbors = self.n_neighbors)
+
+        pass
+
+    def _change_parameters(self, n_neighbors):
+
+        self.n_neighbors = n_neighbors
+        self.model = KNeighborsClassifier(n_neighbors = self.n_neighbors)
+
+
+    def _fit(self, input = None, labels = None, print_message=True):
 
         try: 
             if input == None: input = self.input.df
