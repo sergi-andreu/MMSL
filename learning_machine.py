@@ -1,15 +1,15 @@
 import numpy as np
-
+from sklearn.metrics import classification_report, confusion_matrix
 
 class LearningMachine:
-    def __init__(self, data_class):
+    def __init__(self, data):
         self.name = None  # name of ML algorithm
         self.model = None
 
-        self.data_class = data_class  # training data object
-        self.output = np.full(np.shape(self.data_class.labels), None)  # output of ML algorithm
+        self.data = data  # training data object
+        self.output = np.full(np.shape(self.data.labels), None)  # output of ML algorithm
 
-        self.metrics = {}  # dict of metrics, e.g. accuracy
+        # self.metrics = {}  # dict of metrics, e.g. accuracy
         self.fitting_parameters = dict()
         self.run = 0
         pass
@@ -33,6 +33,13 @@ class LearningMachine:
         # self.metrics = {}
         pass
 
+    def metrics_print(self):
+        mat = confusion_matrix(self.data.labels, self.output)
+        report = classification_report(self.data.labels, self.output)
+        print("Confusion Matrix:\n",mat)
+        print("Clasification Report:\n",report)
+        pass
+
 
 class LDA(LearningMachine):
     def __init__(self, data):
@@ -47,7 +54,7 @@ class LDA(LearningMachine):
         pass
 
     def _fit(self):
-        self.fitting_parameters[self.run] = self.model.fit(self.data_class.df, self.data_class.labels)
+        self.fitting_parameters[self.run] = self.model.fit(self.data.df, self.data.labels)
         # print(f"The {self.name} model has been trained on the given data")
         # print("with parameters:" + str(self.model.get_params()))
         self.run += 1
@@ -63,14 +70,18 @@ class LDA(LearningMachine):
         X is a dataframe containing the features of the samples for which we want to predict their labels
         """
 
-        self.model.predict(X)
+        self.output = self.model.predict(X)
         print(f"The {self.name} model has predicted X")
-        pass
+        return self.output
 
     def _evaluate_training(self, measure="accuracy") -> float:
         if measure == "accuracy":
             score = self.model.score(self.data_class.df, self.data_class.labels)
             self.metrics[str(self.run)+"_train_Acc"] = score
+
+        if measure == "confusionmatrix":
+            cm = confusion_matrix(self.data.labels, self._predict(self.data.df))
+            self.metrics[str(self.run)+"_cm"] = cm
 
         print(f"The {self.name} model has been trained on the given data")
         return score

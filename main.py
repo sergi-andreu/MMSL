@@ -6,42 +6,42 @@ from pandas.plotting import scatter_matrix
 import matplotlib.pyplot as plt
 
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import classification_report, confusion_matrix
-
 
 if __name__ == "__main__":
     #initializing data
     data = Data('project_train.csv')
     data.df.loc[84, "energy"] = 0.734
     data.df.loc[94, "loudness"] = -6.542
-    # data._preprocess()
-    #
-    # model = LogisticRegression(solver='liblinear', random_state=0)
-    # model_fit = model.fit(data.df,data.labels)
-    # score = model.score(data.df,data.labels)
-    # print(score)
-    #
-    # mat = confusion_matrix(data.labels, model.predict(data.df))
-    # report = classification_report(data.labels, model.predict(data.df))
-    # print(mat)
-    # print(report)
-    #
-    # print("hola Sergi, que tal?")
-    ### COLORING UNPROCESSED DATA
-    color_wheel = {0: "darkred", 1: "darkblue"}
-    colors = data.labels.map(lambda x: color_wheel.get(x))
-    list_of_numerical_column_names = list(data.num_bound_col)
+    data._preprocess()
 
-    print(list_of_numerical_column_names)
+    lda_model = LDA(data)
+    lda_model._fit()
+    lda_model._predict(data.df)
+    lda_model.metrics_print()
 
-    scatter_matrix(data.df[list_of_numerical_column_names],
-                   alpha=0.5,
-                   c=colors,
-                   s=7.5,
-                   diagonal='kde')
-    plt.savefig('scatter_matrix_numerical_features.png',dpi = 1600)
-    plt.show()
+    exit()
+
+
+    model = LogisticRegression(solver='liblinear', random_state=0)
+    model_fit = model.fit(data.df,data.labels)
+
+
+    # # print("hola Sergi, que tal?")
+    # ### COLORING UNPROCESSED DATA
+    # color_wheel = {0: "darkred", 1: "darkblue"}
+    # colors = data.labels.map(lambda x: color_wheel.get(x))
+    # list_of_numerical_column_names = list(data.num_bound_col)
     #
+    # print(list_of_numerical_column_names)
+    #
+    # scatter_matrix(data.df[list_of_numerical_column_names],
+    #                alpha=0.5,
+    #                c=colors,
+    #                s=7.5,
+    #                diagonal='kde')
+    # plt.savefig('scatter_matrix_numerical_features.png',dpi = 1600)
+    # plt.show()
+    # #
     # exit()
     #
     # list_of_column_names =  list(data.df)
