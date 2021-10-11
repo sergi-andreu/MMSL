@@ -1,5 +1,5 @@
 from data import Data
-from learning_machine import LearningMachine, LDA
+from learning_machine import LearningMachine, LDA, Logistic_regression
 import numpy as np
 import pandas as pd
 from pandas.plotting import scatter_matrix
@@ -10,67 +10,50 @@ from sklearn.linear_model import LogisticRegression
 if __name__ == "__main__":
     #initializing data
     data = Data('project_train.csv')
-    data.df.loc[84, "energy"] = 0.734
-    data.df.loc[94, "loudness"] = -6.542
-    data.show_scattermatrix()
     data._preprocess()
+    # data.show_scattermatrix()
 
-    lda_model = LDA(data)
-    lda_model._fit()
-    lda_model._predict(data.df)
-    lda_model.metrics_print()
+    from sklearn.tree import DecisionTreeClassifier
 
-    exit()
+    model = DecisionTreeClassifier(random_state=0)
+    print(data.df.columns)
+    model.fit(data.df,data.labels)
 
+    output = model.predict(data.df)
+    true_false = np.array(output == data.labels)
+    print(true_false)
+    print(output)
+    print(data.labels)
 
-    model = LogisticRegression(solver='liblinear', random_state=0)
-    model_fit = model.fit(data.df,data.labels)
-
-    # ### COLORING UNPROCESSED DATA
-    # color_wheel = {0: "darkred", 1: "darkblue"}
-    # colors = data.labels.map(lambda x: color_wheel.get(x))
-    # list_of_numerical_column_names = list(data.num_bound_col)
+    # ### COLOUR WHEEL FOR OUPUT
+    # color_labels = [None for i in LM.output]
+    # print(LM.output,LM.data.labels)
+    # print("\n")
+    # for i in range(0,sizeOfdata):
+    #     if LM.output[i] == LM.data.labels[i]:
+    #         if LM.output[i] == 1:
+    #             color_labels[i] = 1
+    #         else:
+    #             color_labels[i] = 4
+    #     else:
+    #         if LM.output[i] == 1:
+    #             color_labels[i] = 2
+    #         else:
+    #             color_labels[i] = 3
+    #
+    # color_wheel = {1: "green", 2: "yellow", 3: "purple", 4: "red"}
+    # colors = [color_wheel.get(x) for x in color_labels]
+    #
+    # list_of_numerical_column_names = list(LM.data.num_bound_col)
     #
     # print(list_of_numerical_column_names)
     #
-    # scatter_matrix(data.df[list_of_numerical_column_names],
-    #                alpha=0.5,
-    #                c=colors,
-    #                s=7.5,
-    #                diagonal='kde')
-    # plt.savefig('scatter_matrix_numerical_features.png',dpi = 1600)
+    # pd.plotting.scatter_matrix(LM.data.df[list_of_numerical_column_names],
+    #                            alpha=0.5,
+    #                            c=colors,
+    #                            s=7.5,
+    #                            diagonal='kde')
+    # plt.savefig('scatter_matrix_numerical_features_LR.png', dpi=1600)
     # plt.show()
-    # #
+    #
     # exit()
-    #
-    # list_of_column_names =  list(data.df)
-    # scatter_matrix(data.df[list_of_column_names])
-    # plt.savefig('scatter_matrix_features.png',dpi = 1600, groups = data.labels)
-    # plt.show()
-
-
-    # list_of_cat_names = list([data.binary_col,data.class_col])
-    # scatter_matrix(data.df[list_of_cat_names])
-    # plt.savefig('scatter_matrix_binary_features.png')
-    # plt.show()
-
-    # #creating Learning Machine
-    # lda = LDA(data)
-    # lda._fit()
-    # # for i in ("svd","lsqr","eigen"):
-    # #     lda.model.solver = i
-    # #     lda._fit()
-    # #     score = lda._evaluate_training()
-    # #     print(i+"-score:"+str(score))
-    # #     print(lda.model.get_params())
-    # #     print()
-    # # print(lda.metrics)
-    #
-    # prediction = lda.model.predict(lda.data_class.df)
-    #
-    # color_tp = [prediction == 1 and lda.data_class.labels == 1]
-    # print(color_tp)
-    # exit()
-    # print(prediction==lda.data_class.labels)
-
-

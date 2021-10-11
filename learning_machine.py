@@ -41,6 +41,7 @@ class LearningMachine:
         pass
 
 
+
 class LDA(LearningMachine):
     def __init__(self, data):
         super().__init__(data)
@@ -95,3 +96,16 @@ class LDA(LearningMachine):
     #
     #     self.model.score(X, Y)
     # pass
+
+
+class Logistic_regression(LearningMachine):
+    def __init__(self, data):
+        super().__init__(data)
+
+        self.name = "LogisticRegression"
+
+        from sklearn.linear_model import LogisticRegression
+        self.model = LogisticRegression(solver='liblinear')#, random_state=0)
+
+        # self._fit()
+        pass

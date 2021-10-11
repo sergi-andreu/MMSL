@@ -1,6 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
+
 class Data:
 
     def __init__(self, path):
@@ -10,7 +11,7 @@ class Data:
         self.column_names = list(self.df.columns)
 
         self.labels = self.df["Label"]
-        print(self.labels)
+        self.df.drop(["Label"], axis=1)
 
         self.num_bound_col = ["danceability", "energy", "speechiness", "acousticness",
                               "instrumentalness", "liveness", "valence"]
@@ -19,6 +20,9 @@ class Data:
 
         self.class_col = ["key"]
         self.binary_col = ["mode"]
+
+        self.df.loc[84, "energy"] = 0.734
+        self.df.loc[94, "loudness"] = -6.542
 
         self.preprocessed = False
 
@@ -115,10 +119,10 @@ class Data:
         print(list_of_numerical_column_names)
 
         pd.plotting.scatter_matrix(self.df[list_of_numerical_column_names],
-                       alpha=0.5,
-                       c=colors,
-                       s=7.5,
-                       diagonal='kde')
+                                   alpha=0.5,
+                                   c=colors,
+                                   s=7.5,
+                                   diagonal='kde')
         plt.savefig('scatter_matrix_numerical_features.png', dpi=1600)
         plt.show()
         #
