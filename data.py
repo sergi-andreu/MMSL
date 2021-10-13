@@ -12,6 +12,7 @@ class Data:
 
         self.labels = self.df["Label"]
         
+        self.vif = None
 
         self.num_bound_col_names = ["danceability", "energy", "speechiness","acousticness",
                               "instrumentalness", "liveness", "valence"]
@@ -27,12 +28,24 @@ class Data:
         self.unbound_preprocessed = False
         self.class_preprocessed  = False
         self.binary_preprocessed = False
+        self.is_data_shuffled = False
+        self.are_duplicates_removed = False
 
         pass
     
 
     def __str__(self):
         return str(self.path)
+    
+    
+    def _shuffle(self):
+        
+        n_data = len(self.df)
+        
+        idx = np.random.permutation(n_data)
+        self.df, self.labels = self.df.reindex(idx), self.labels.reindex(idx)
+        
+        self.is_data_shuffled = True
 
 
     def _split_df(self):
@@ -90,11 +103,23 @@ class Data:
 
 
     def _append_cols(self):
-        
+
         self.df = pd.concat([self.num_bound_col, self.num_unbound_col, self.class_col, self.binary_col], axis=1)
+        
+        
+    def _get_vif(self):
+        
+        from statsmodels.stats.outliers_influence import variance_inflation_factor
 
+        vif = pd.DataFrame()
+        vif["variables"] = self.df.columns
+        vif["VIF"] = [variance_inflation_factor(self.df.values, i) for i in range(self.df.shape[1])]
 
-    def _preprocess(self, bound_bool = True, unbound_bool = True, class_bool = True, binary_bool = True):
+        self.vif = vif
+        
+
+    def preprocess(self, bound_bool = True, unbound_bool = True, class_bool = True, binary_bool = False,
+                    shuffle=True, remove_duplicates=True, vif=True):
 
         """
         Booleans stand for normalising the data types or not normalising the data types
@@ -106,15 +131,19 @@ class Data:
         if unbound_bool : self._normalize_num_unbound_col()
         if class_bool : self._preprocess_class_col()
         if binary_bool : self._normalize_binary()
-
-        self._append_cols()
-
+        self._append_cols()     
+        
+        if remove_duplicates : self._remove_duplicates()
+        if shuffle : self._shuffle()
+        
+        if vif : self._get_vif()
+        
         self.preprocessed = True
 
         pass
 
 
-    def remove_duplicates(self):
+    def _remove_duplicates(self):
         duplicated = self.df.duplicated()
         n_duplicated = np.sum(duplicated)
 
@@ -122,14 +151,14 @@ class Data:
 
         self.df = self.df.drop(idx).reset_index(drop=True)
         self.labels = self.labels.drop(idx).reset_index(drop=True)
+        
+        self.are_duplicates_removed = True
 
         print(f"There were {n_duplicated} duplicated elements in the dataset, and have been removed from the dataframe")
         
 
     
     def visualize(self, cmap=None, labels=None, diagonal="hist"):
-
-        print(diagonal)
 
         from matplotlib import colors
 

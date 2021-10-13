@@ -6,6 +6,7 @@ from sklearn.model_selection import KFold
 import warnings
 from sklearn.exceptions import ConvergenceWarning
 
+
 class LearningMachine:
     
     def __init__(self, data_class):
@@ -18,9 +19,11 @@ class LearningMachine:
         
         self.methods = ["LDA", "RDA"]
         
-        self.output = np.full(np.shape(self.labels), None)
+        self.best_parameters = {}
+
 
         self.metrics = {}
+        self.parameters = {}
         
         self.fitting_parameters = {}
         
@@ -134,7 +137,6 @@ class LearningMachine:
         kfold_test_metrics = []
 
         total_input = self.input.df
-
         total_labels = self.input.labels
 
         n_data = len(self.input.df)
@@ -142,6 +144,7 @@ class LearningMachine:
         if shuffle:
             idx = np.random.permutation(n_data)
             total_input, total_labels = total_input.reindex(idx), total_labels.reindex(idx)
+
 
         cv = KFold(n_splits=k)
 
@@ -155,12 +158,6 @@ class LearningMachine:
             train_df, train_labels = total_input.iloc[train_index], total_labels.iloc[train_index]
             test_df, test_labels = total_input.iloc[test_index], total_labels.iloc[test_index]
 
-            mean = train_df.mean()
-            std = train_df.std()
-
-            train_df = (train_df - mean) / std
-            test_df = (test_df - mean) / std
-
             self._fit(input=train_df, labels=train_labels, print_message=False)
 
             kfold_train_metrics.append(self._compute_metrics(X=train_df, Y=train_labels, 
@@ -173,7 +170,8 @@ class LearningMachine:
         
         assert len(kfold_train_metrics) == len(kfold_test_metrics)
 
-        L = len(kfold_train_metrics)
+        L = len(kfold_train_metrics) #?
+
 
         kfold_metrics = {}
 
@@ -233,12 +231,15 @@ class LearningMachine:
 
         self.run_cross_validation += 1
 
-
+        
+        
     def parameter_search(self, parameter_list, parameter_label = None, plot_variable = "accuracy", layers_or_width="layers"):
 
         for parameter in parameter_list:
             self._change_parameters(parameter)
             self.cross_validation()
+
+            self.parameters[self.run_cross_validation - 1] = parameter
 
 
         import matplotlib.pyplot as plt
@@ -252,6 +253,18 @@ class LearningMachine:
         if plot_variable == "accuracy":
             train_variable = "Train Accuracy"
             val_variable = "Test Accuracy"
+
+        elif plot_variable == "recall":
+            train_variable = "Train Recall"
+            val_variable = "Test Recall"
+
+        elif plot_variable == "precision":
+            train_variable = "Train Precision"
+            val_variable = "Test Precision"
+
+        elif plot_variable == "F1":
+            train_variable = "Train F1 Score"
+            val_variable = "Test F1 Score"
 
         train_ = []
         train_err_ = []
@@ -267,9 +280,20 @@ class LearningMachine:
             test_.append(self.metrics[i][val_variable][0])
             test_err_.append(self.metrics[i][val_variable][1])
 
+
+        ind_max = np.argmax(test_) # Index at which the chosen test metric is maximum
+
+        self.best_parameters[plot_variable] = [ parameter_list[ind_max] , str(round(test_[ind_max], 2)) + u" \u00B1 " + str(round(test_err_[ind_max],2)) ]
+
         if self.name == "NN":
             if layers_or_width == "layers":
+                parameter_list = [len(parameter_list[i]) for i in range(len(parameter_list))]
+                
+            if layers_or_width == "width":
                 parameter_list = [parameter_list[i][0] for i in range(len(parameter_list))]
+
+            if layers_or_width == "both":
+                parameter_list = [str(parameter_list[i]) for i in range(len(parameter_list))]
 
 
         plt.plot(parameter_list, train_ , c="r", label="Training")
@@ -279,12 +303,34 @@ class LearningMachine:
         plt.plot(parameter_list, test_, c="b", label="Validation")
         plt.fill_between(parameter_list, np.array(test_) - np.array(test_err_),
                         np.array(test_) + np.array(test_err_), color="b", alpha=0.5)
+        
+        plt.xlabel(parameter_label)
+        plt.ylabel(plot_variable)
 
         plt.show()
 
 
+    def print_table_with_results(self):
 
-        
+        import pandas as pd
+
+        results_df = pd.DataFrame()
+
+
+        for i in range(self.run_cross_validation):
+
+            results_df[self.parameters[i]] = [self.metrics[i][key] for key in self.metrics[i].keys()]
+
+
+        #results_df["Metrics"] = [key for key in self.metrics[i].keys()]
+
+        results_df = results_df.insert(0, "Metrics", [key for key in self.metrics[i].keys()])
+
+        print(results_df)
+
+        return results_df
+
+
 
 
 
@@ -326,6 +372,18 @@ class LearningMachine:
 
         pass
 
+
+    def fit_all_data_with_best_parameters(self, criterion="accuracy", visualize=True, diagonal="hist", print_metrics = True):
+
+        assert self.best_parameters != None, "Please use the parameter_search functionality for finding the best parameters"
+
+        self._change_parameters(self.best_parameters[criterion][0])
+
+        print(f"The model has been trained using {self.best_parameters[criterion][0]}, whih maximizes the test {criterion} to {self.best_parameters[criterion][1]}")
+
+        self.fit_with_all_data(visualize = visualize, diagonal=diagonal, print_metrics = print_metrics)
+
+        pass
 
 
 
@@ -384,7 +442,6 @@ class LDA(LearningMachine):
     def _change_parameters(self, solver):
 
         self.model.solver = solver
-
 
 
 class QDA(LearningMachine):
@@ -457,11 +514,6 @@ class KNearest(LearningMachine):
 
         pass
 
-    def _change_parameters(self, n_neighbors):
-        from sklearn.neighbors import KNeighborsClassifier
-        self.n_neighbors = n_neighbors
-        self.model = KNeighborsClassifier(n_neighbors = n_neighbors)
-
 
     def _fit(self, input = None, labels = None, print_message=True):
 
@@ -501,12 +553,18 @@ class KNearest(LearningMachine):
         return self.model.get_params()
 
 
+    def _change_parameters(self, n_neighbors):
+        from sklearn.neighbors import KNeighborsClassifier
+        self.n_neighbors = n_neighbors
+        self.model = KNeighborsClassifier(n_neighbors = n_neighbors)
+
+
 class LogisticRegression(LearningMachine):
 
     
     def __init__(self, data):
         super().__init__(data)
-        self.name = "LDA"
+        self.name = "Logistic Regression"
         
         from sklearn.linear_model import LogisticRegression
         
@@ -516,6 +574,8 @@ class LogisticRegression(LearningMachine):
 
     def _fit(self, input = None, labels = None, print_message=True):
 
+        warnings.filterwarnings("ignore", category=ConvergenceWarning)
+
         try: 
             if input == None: input = self.input.df
         except: pass
@@ -552,10 +612,17 @@ class LogisticRegression(LearningMachine):
         return self.model.get_params()
 
 
-    def _change_parameters(self, solver):
+    def _change_parameters(self, penalty):
 
-        self.model.solver = solver
+        self.model.l1_ratio = None
 
+        assert penalty in ["l1", "l2", "elasticnet", "none"], "Choose a valid penalty (l1, l2, elasticnet or none)"
+        self.model.penalty = penalty
+
+        if penalty == "l1": self.model.solver = "liblinear"
+        if penalty == "elasticnet" : 
+            self.model.solver = "saga"
+            self.model.l1_ratio = 0.5
 
 class NeuralNetwork(LearningMachine):
     
@@ -566,7 +633,7 @@ class NeuralNetwork(LearningMachine):
         from sklearn.neural_network import MLPClassifier
         
         self.model = MLPClassifier(solver="sgd", hidden_layer_sizes=(1,1), alpha=1e-5)
-        self.model.max_iter = 500
+        self.model.max_iter = 1000
 
         pass
 
@@ -613,3 +680,118 @@ class NeuralNetwork(LearningMachine):
     def _change_parameters(self, hidden_layers):
 
         self.model.hidden_layer_sizes = hidden_layers
+
+class DecisionTrees(LearningMachine):
+
+    
+    def __init__(self, data):
+        super().__init__(data)
+        self.name = "DTs"
+        
+        from sklearn import tree
+        
+        self.model = tree.DecisionTreeClassifier()
+
+        pass
+
+    def _fit(self, input = None, labels = None, print_message=True):
+
+        try: 
+            if input == None: input = self.input.df
+        except: pass
+
+        try: 
+            if labels == None: labels = self.input.labels
+        except: pass
+
+        self.model.fit(input, labels)
+        
+        if print_message:
+            print(f"The {self.name} model has been trained on the given data")
+        pass
+
+    
+    def _predict(self, X=None):
+        
+        """
+        X is a dataframe containing the features of the samples for which we want to predict their labels
+        """
+        
+        try:
+            if X == None:
+                X = self.input.df
+        except:
+            pass
+
+        return self.model.predict(X)
+        
+        pass
+
+    def _get_fitting_parameters(self):
+
+        return self.model.get_params()
+
+
+    def _change_parameters(self, solver):
+
+        print("Choose between gini and entropy")
+
+        self.model.criterion = criterion
+
+
+class SVM(LearningMachine):
+
+    
+    def __init__(self, data):
+        super().__init__(data)
+        self.name = "SVM"
+        
+        from sklearn import svm
+        
+        self.model = svm.SVC()
+
+        pass
+
+    def _fit(self, input = None, labels = None, print_message=True):
+
+        try: 
+            if input == None: input = self.input.df
+        except: pass
+
+        try: 
+            if labels == None: labels = self.input.labels
+        except: pass
+
+        self.model.fit(input, labels)
+        
+        if print_message:
+            print(f"The {self.name} model has been trained on the given data")
+        pass
+    
+    
+    def _predict(self, X=None):
+        
+        """
+        X is a dataframe containing the features of the samples for which we want to predict their labels
+        """
+        
+        try:
+            if X == None:
+                X = self.input.df
+        except:
+            pass
+
+        return self.model.predict(X)
+        
+        pass
+
+    def _get_fitting_parameters(self):
+
+        return self.model.get_params()
+
+
+    def _change_parameters(self, kernel):
+
+        assert kernel in kernel, "Choose a valid kernel"
+
+        self.model.kernel = kernel
