@@ -1,6 +1,9 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib as mpl
+
+mpl.rcParams['axes.formatter.offset_threshold'] = 2
 
 class Data:
     
@@ -173,10 +176,10 @@ class Data:
         except: pass
 
         plotting_features = self.num_bound_col_names + self.num_unbound_col_names
-        plotting_df = self.df[self.num_bound_col_names]
-        pd.plotting.scatter_matrix(plotting_df, alpha=0.4, figsize=(17,14), c=labels, cmap=cmap, diagonal=diagonal)
-        plt.show()
+        plotting_df = self.df[plotting_features]
+        sc_matrix = pd.plotting.scatter_matrix(plotting_df, alpha=0.4, figsize=(18,14), c=labels, cmap=cmap, diagonal=diagonal, range_padding=0.1)
 
+        plt.show()
         pass
 
 

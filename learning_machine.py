@@ -18,9 +18,10 @@ class LearningMachine:
         
         self.methods = ["LDA", "RDA"]
         
-        self.output = np.full(np.shape(self.labels), None)
+        self.best_parameters = {}
 
         self.metrics = {}
+        self.parameters = {}
         
         self.fitting_parameters = {}
         
@@ -29,7 +30,17 @@ class LearningMachine:
         self.run = 0
         self.run_cross_validation = 0
 
-        
+
+        self.parameter_labels = {"LDA" : "Solver", "QDA" : "Solver", "KNearestNeighbors" : "N neighbors",
+                                "LogisticRegression" : "Penalty", "NN" : "Hidden layers",
+                                "SVM" : "Kernel",
+                                "DTs" : "Criterion", "RandomForest" : "N estimators", "bagging" : "N estimators"}
+
+
+        self.evaluation_labels = {"accuracy" : ["Train Accuracy", "Test Accuracy"],
+                            "recall" : ["Train Recall", "Test Recall"],
+                            "precision" : ["Train Precision", "Test Precision"],
+                            "f1" : ["Train F1 Score", "Test F1 Score"]}
         
     def __str__(self):
         return str(self.name)
@@ -223,8 +234,8 @@ class LearningMachine:
             train_F1 = [np.nanmean(train_F1_list), np.nanstd(train_F1_list)]
             test_F1 = [np.nanmean(test_F1_list), np.nanstd(test_F1_list)]
 
-            kfold_metrics["Train F1 score"] = train_F1
-            kfold_metrics["Test F1 score"] = test_F1
+            kfold_metrics["Train F1 Score"] = train_F1
+            kfold_metrics["Test F1 Score"] = test_F1
 
             #self.metrics[self.run_cross_validation] = {"Train F1 score": train_F1, "Test F1 score": test_F1}
 
@@ -233,32 +244,24 @@ class LearningMachine:
 
         self.run_cross_validation += 1
 
+        
+    def parameter_search(self, parameter_list, k=3, parameter_label = None, plot_variable = "accuracy", layers_or_width="layers"):
 
-        
-        
-        
-    def parameter_search(self, parameter_list, parameter_label = None, plot_variable = "accuracy", layers_or_width="layers"):
+        assert plot_variable in ["accuracy", "recall", "precision", "f1"], "The plot_variable should be accuracy, recall, precision or f1"
 
         for parameter in parameter_list:
             self._change_parameters(parameter)
-            self.cross_validation()
+            self.cross_validation(k=k)
 
+            self.parameters[self.run_cross_validation - 1] = parameter
 
         import matplotlib.pyplot as plt
 
         if parameter_label == None:
+            parameter_label = self.parameter_labels[self.name]
 
-            parameter_labels = {"LDA" : "solver", "QDA" : "solver", "KNearestNeighbors" : "n_neighbors",
-                                "LogisticRegression, "penalty", "NN" : "layers",
-                                "SVM" : "kernel",
-                                "DTs" : "criterion", "RandomForest" : "n_estimators", "bagging" : "n_estimators"}
-
-            parameter_label = parameter_labels[self.name]
-
-
-        if plot_variable == "accuracy":
-            train_variable = "Train Accuracy"
-            val_variable = "Test Accuracy"
+        train_variable = self.evaluation_labels[plot_variable][0]
+        val_variable = self.evaluation_labels[plot_variable][1]
 
         train_ = []
         train_err_ = []
@@ -274,6 +277,9 @@ class LearningMachine:
             test_.append(self.metrics[i][val_variable][0])
             test_err_.append(self.metrics[i][val_variable][1])
 
+        ind_max = np.argmax(test_) # Index at which the chosen test metric is maximum
+        self.best_parameters[plot_variable] = [ parameter_list[ind_max] , str(round(test_[ind_max], 2)) + u" \u00B1 " + str(round(test_err_[ind_max],2)) ]
+
         if self.name == "NN":
             if layers_or_width == "layers":
                 parameter_list = [len(parameter_list[i]) for i in range(len(parameter_list))]
@@ -281,14 +287,18 @@ class LearningMachine:
             if layers_or_width == "width":
                 parameter_list = [parameter_list[i][0] for i in range(len(parameter_list))]
 
+            if layers_or_width == "both":
+                parameter_list = [str(parameter_list[i]) for i in range(len(parameter_list))]
+
+
 
         plt.plot(parameter_list, train_ , c="r", label="Training")
         plt.fill_between(parameter_list, np.array(train_) - np.array(train_err_),
-                        np.array(train_) + np.array(train_err_), color="r", alpha=0.5)
+                        np.array(train_) + np.array(train_err_), color="r", alpha=0.35)
 
         plt.plot(parameter_list, test_, c="b", label="Validation")
         plt.fill_between(parameter_list, np.array(test_) - np.array(test_err_),
-                        np.array(test_) + np.array(test_err_), color="b", alpha=0.5)
+                        np.array(test_) + np.array(test_err_), color="b", alpha=0.35)
         
         plt.xlabel(parameter_label)
         plt.ylabel(plot_variable)
@@ -335,10 +345,77 @@ class LearningMachine:
         pass
 
 
+    def fit_all_data_with_best_parameters(self, criterion="accuracy", visualize=True, diagonal="hist", print_metrics = True):
+
+        assert self.best_parameters != None, "Please use the parameter_search functionality for finding the best parameters"
+
+        self._change_parameters(self.best_parameters[criterion][0])
+
+        print(f"The model has been trained using {self.best_parameters[criterion][0]}, whih maximizes the test {criterion} to {self.best_parameters[criterion][1]}")
+
+        self.fit_with_all_data(visualize = visualize, diagonal=diagonal, print_metrics = print_metrics)
+
+        pass
 
 
+    def _get_best_parameters(self):
+
+        dict_parameters = {}
+        dict_metrics = {}
+        dict_metrics_err = {}
+
+        for key in self.evaluation_labels.keys():
+            dict_parameters[key] = []
+            dict_metrics[key] = []
+            dict_metrics_err[key] = []
+
+        for i in range(self.run_cross_validation):
+            for key in self.evaluation_labels.keys():
+                dict_parameters[key].append(self.parameters[i])
+                dict_metrics[key].append(self.metrics[i][self.evaluation_labels[key][1]][0])
+                dict_metrics_err[key].append(self.metrics[i][self.evaluation_labels[key][1]][1])
 
         
+        for key in self.evaluation_labels.keys():
+            ind_max = np.argmax(dict_metrics[key])
+
+            self.best_parameters[key] = [ dict_parameters[key][ind_max], 
+                                        str(round(dict_metrics[key][ind_max], 2)) + u" \u00B1 " + str(round(dict_metrics_err[key][ind_max], 2))]
+
+        pass
+
+    def get_table_with_results(self, show_train_results = False, hide_index_name = True):
+
+        self._get_best_parameters()
+        
+        import pandas as pd
+        results_df = pd.DataFrame()
+
+        for i in range(self.run_cross_validation):
+            results_df[f"{self.parameters[i]} {self.parameter_labels[self.name]}"] = [str(round(100*self.metrics[i][key][0],1)) + u"\u00B1" + str(round(100*self.metrics[i][key][1],1)) + "%" for key in self.metrics[i].keys()]
+
+        results_df["Metrics"] = [key for key in self.metrics[i].keys()]
+        results_df = results_df.set_index(["Metrics"], append=False)
+
+        if not show_train_results:
+            for idx, row in results_df.iterrows():
+                if idx[:5] == "Train":
+                    results_df = results_df.drop(index=idx)
+            #results_df = results_df.reset_index(drop=True)
+
+            new_keys = [key[5:] for key, row in results_df.iterrows()]
+
+            results_df["Metrics"] = new_keys
+            results_df = results_df.set_index(["Metrics"], append=False)
+                
+
+        order_labels = ["accuracy", "recall", "precision", "f1"]
+
+        if hide_index_name:
+            results_df.index.name = None
+
+        return results_df
+
 class LDA(LearningMachine):
     
     def __init__(self, data):
@@ -351,7 +428,7 @@ class LDA(LearningMachine):
 
         pass
 
-    def _fit(self, input = None, labels = None, print_message=True):
+    def _fit(self, input = None, labels = None, print_message=False):
 
         try: 
             if input == None: input = self.input.df
@@ -405,7 +482,7 @@ class QDA(LearningMachine):
 
         pass
 
-    def _fit(self, input = None, labels = None, print_message=True):
+    def _fit(self, input = None, labels = None, print_message=False):
 
         warnings.filterwarnings("ignore", message="Variables are collinear")
 
@@ -448,7 +525,7 @@ class QDA(LearningMachine):
 
         self.model.solver = solver
 
-class KNearest(LearningMachine):
+class KNearestNeighbors(LearningMachine):
     
     def __init__(self, data, n_neighbors = 5):
         super().__init__(data)
@@ -468,7 +545,7 @@ class KNearest(LearningMachine):
         self.model = KNeighborsClassifier(n_neighbors = n_neighbors)
 
 
-    def _fit(self, input = None, labels = None, print_message=True):
+    def _fit(self, input = None, labels = None, print_message=False):
 
         try: 
             if input == None: input = self.input.df
@@ -518,7 +595,9 @@ class LogisticRegression(LearningMachine):
 
         pass
 
-    def _fit(self, input = None, labels = None, print_message=True):
+    def _fit(self, input = None, labels = None, print_message=False):
+
+        warnings.filterwarnings("ignore", category=ConvergenceWarning)
 
         try: 
             if input == None: input = self.input.df
@@ -576,7 +655,7 @@ class NeuralNetwork(LearningMachine):
         
         from sklearn.neural_network import MLPClassifier
         
-        self.model = MLPClassifier(solver="sgd", hidden_layer_sizes=(1,1), alpha=1e-5)
+        self.model = MLPClassifier(solver="adam", hidden_layer_sizes=(1,1), alpha=0.0001, early_stopping=False)
         self.model.max_iter = 1000
 
         pass
@@ -639,7 +718,7 @@ class SVM(LearningMachine):
 
         pass
 
-    def _fit(self, input = None, labels = None, print_message=True):
+    def _fit(self, input = None, labels = None, print_message=False):
 
         try: 
             if input == None: input = self.input.df
@@ -696,7 +775,7 @@ class DecisionTrees(LearningMachine):
 
         pass
 
-    def _fit(self, input = None, labels = None, print_message=True):
+    def _fit(self, input = None, labels = None, print_message=False):
 
         try: 
             if input == None: input = self.input.df
@@ -740,7 +819,6 @@ class DecisionTrees(LearningMachine):
 
         self.model.criterion = criterion
 
-
 class RandomForest(LearningMachine):
 
     
@@ -754,7 +832,7 @@ class RandomForest(LearningMachine):
 
         pass
 
-    def _fit(self, input = None, labels = None, print_message=True):
+    def _fit(self, input = None, labels = None, print_message=False):
 
         try: 
             if input == None: input = self.input.df
@@ -809,7 +887,7 @@ class Bagging(LearningMachine):
 
         pass
 
-    def _fit(self, input = None, labels = None, print_message=True):
+    def _fit(self, input = None, labels = None, print_message=False):
 
         try: 
             if input == None: input = self.input.df
