@@ -1,0 +1,7 @@
+\begin{tabular}{lllllllll}
+{} & {10 Number of estimators} & {20 Number of estimators} & {50 Number of estimators} & {100 Number of estimators} & {150 Number of estimators} & {200 Number of estimators} & {250 Number of estimators} & {300 Number of estimators} \\
+Accuracy & 78.0±3.5% & 82.0±3.0% & \font-weightbold 82.6±4.8% & 82.4±4.4% & 82.6±3.4% & 81.0±5.3% & 82.2±3.9% & 81.8±3.8% \\
+Recall & 83.4±6.1% & \font-weightbold 84.9±4.5% & 84.3±6.1% & 84.3±6.1% & 84.7±6.1% & 82.0±7.0% & 83.0±5.3% & 83.1±6.2% \\
+Precision & 75.5±3.2% & 80.5±3.4% & \font-weightbold 82.4±7.1% & 82.2±7.8% & 82.1±6.3% & 81.2±6.6% & 82.4±6.7% & 81.7±5.7% \\
+F1 Score & 79.1±2.5% & 82.5±2.0% & \font-weightbold 83.0±4.1% & 82.8±3.7% & 83.0±2.5% & 81.3±4.5% & 82.4±3.3% & 82.1±3.0% \\
+\end{tabular}

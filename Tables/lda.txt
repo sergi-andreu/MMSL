@@ -1,0 +1,7 @@
+\begin{tabular}{lll}
+{} & {svd Solver} & {lsqr Solver} \\
+Accuracy & \font-weightbold 77.5±5.2% & \font-weightbold 77.5±5.2% \\
+Recall & \font-weightbold 84.1±4.8% & \font-weightbold 84.1±4.8% \\
+Precision & \font-weightbold 74.9±6.4% & \font-weightbold 74.9±6.4% \\
+F1 Score & \font-weightbold 79.0±4.3% & \font-weightbold 79.0±4.3% \\
+\end{tabular}

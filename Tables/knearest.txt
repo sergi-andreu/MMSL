@@ -1,0 +1,7 @@
+\begin{tabular}{llllllll}
+{} & {1 Number of neighbors} & {5 Number of neighbors} & {10 Number of neighbors} & {15 Number of neighbors} & {20 Number of neighbors} & {50 Number of neighbors} & {100 Number of neighbors} \\
+Accuracy & 74.3±3.9% & \font-weightbold 75.7±4.8% & 75.1±2.7% & 73.1±4.7% & 71.7±3.1% & 73.9±4.5% & 73.4±3.2% \\
+Recall & 77.4±4.5% & 83.4±3.6% & \font-weightbold 91.0±3.2% & 83.3±5.9% & 87.4±6.2% & 86.3±8.9% & 90.2±8.4% \\
+Precision & \font-weightbold 73.3±4.1% & 72.5±5.6% & 69.2±4.3% & 69.4±2.7% & 66.7±2.5% & 69.8±4.0% & 67.9±4.1% \\
+F1 Score & 75.1±2.6% & 77.4±4.4% & \font-weightbold 78.5±2.4% & 75.6±3.2% & 75.5±1.9% & 76.7±3.2% & 77.1±2.4% \\
+\end{tabular}

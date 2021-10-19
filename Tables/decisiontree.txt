@@ -1,0 +1,7 @@
+\begin{tabular}{lll}
+{} & {gini Criterion} & {entropy Criterion} \\
+Accuracy & \font-weightbold 75.9±4.5% & 74.7±4.7% \\
+Recall & \font-weightbold 77.6±5.0% & 75.0±6.0% \\
+Precision & \font-weightbold 75.3±6.4% & 75.0±3.5% \\
+F1 Score & \font-weightbold 76.3±4.5% & 74.8±3.5% \\
+\end{tabular}
