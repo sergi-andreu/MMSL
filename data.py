@@ -7,13 +7,16 @@ mpl.rcParams['axes.formatter.offset_threshold'] = 2
 
 class Data:
     
-    def __init__(self, path):
+    def __init__(self, path, test=False):
         
         self.path = path
         self.df = pd.read_csv(path)
         self.column_names = list(self.df.columns)
 
-        self.labels = self.df["Label"]
+        if not test:
+            self.labels = self.df["Label"]
+        else:
+            self.labels = None
         
         self.vif = None
 
@@ -181,5 +184,21 @@ class Data:
 
         plt.show()
         pass
+    
+    def preprocess_new_data(self, test_data):
+        
+        num_bound_col = test_data.df[self.num_bound_col_names]
+        num_unbound_col = test_data.df[self.num_unbound_col_names]
+        class_col = test_data.df[self.class_col_names]
+        binary_col = test_data.df[self.binary_col_names]
+        
+        class_col = pd.get_dummies(class_col["key"], prefix='key')
+        
+        if self.bound_preprocessed:
+            num_bound_col = (num_bound_col - self.mean_num_bound_col)/self.std_num_bound_col
+        if self.unbound_preprocessed: 
+            num_unbound_col = (num_unbound_col - self.mean_num_unbound_col)/self.std_num_unbound_col
+            
+        return pd.concat([num_bound_col, num_unbound_col, class_col, binary_col], axis=1)
 
 
